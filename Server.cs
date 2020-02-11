@@ -79,6 +79,8 @@ namespace tcp_server
                     writer.Write(byte.MaxValue);
                     Console.WriteLine("[Server] Response was: {0}", request);
                 }
+
+                Array.Clear(buffer, 0, buffer.Length);
             }
         }
         private static string AssignOperands(string operand, Operands operands)

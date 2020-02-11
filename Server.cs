@@ -66,7 +66,7 @@ namespace tcp_server
                 Console.WriteLine("[Server] Reading from client");
                 while ((byteCount = networkStream.Read(buffer, 0, buffer.Length)) != 0)
                 {
-                    request = Encoding.UTF8.GetString(buffer, 0, byteCount);
+                    request = Encoding.ASCII.GetString(buffer, 0, byteCount);
                     Console.WriteLine("[Server] Client wrote {0}", request);
 
                     request = AssignOperands(request.Substring(0, request.Length - 1), operands);

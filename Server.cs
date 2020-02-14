@@ -57,27 +57,26 @@ namespace tcp_server
             {
 
                 BinaryWriter writer = new BinaryWriter(networkStream, Encoding.ASCII, true);
+                BinaryReader reader = new BinaryReader(networkStream, Encoding.ASCII, true);
                 Operands operands = new Operands();
 
                 var buffer = new byte[256];
-                int byteCount;
-                string request;
 
-                Console.WriteLine("[Server] Reading from client");
-                while ((byteCount = networkStream.Read(buffer, 0, buffer.Length)) != 0)
+                while (reader.PeekChar() == -1)
                 {
-                    request = Encoding.ASCII.GetString(buffer, 0, byteCount);
-                    Console.WriteLine("[Server] Client wrote {0}", request);
+                    byte startOfFile = reader.ReadByte();
+                    short messageSize = reader.ReadInt16();
+                    byte[] messageBytes = reader.ReadBytes((int)messageSize);
+                    string message = Encoding.ASCII.GetString(messageBytes);
+                    byte endOfFile = reader.ReadByte();
 
-                    request = AssignOperands(request.Substring(0, request.Length - 1), operands);
-
-                    byte[] msg = System.Text.Encoding.ASCII.GetBytes(request);
+                    string response = AssignOperands(message, operands);
+                    byte[] responseBytes = Encoding.ASCII.GetBytes(response);
 
                     writer.Write((byte)1);
-                    writer.Write((short)Encoding.ASCII.GetByteCount(request));
-                    writer.Write(msg);
+                    writer.Write((short)Encoding.ASCII.GetByteCount(response));
+                    writer.Write(responseBytes);
                     writer.Write(byte.MaxValue);
-                    Console.WriteLine("[Server] Response was: {0}", request);
                 }
 
                 Array.Clear(buffer, 0, buffer.Length);
@@ -86,23 +85,26 @@ namespace tcp_server
         private static string AssignOperands(string operand, Operands operands)
         {
             int result = 0;
-            if (operand.Contains("SETOPA:"))
+            string[] split = null;
+            if (operand.StartsWith("SETOPA:"))
             {
-                operands.OperandA = Int16.Parse(operand.Substring(operand.Length - 1));
+                split = operand.Split(':');
+                operands.OperandA = Int16.Parse(split[1]);
             }
-            else if (operand.Contains("SETOPB:"))
+            else if (operand.StartsWith("SETOPB:"))
             {
-                operands.OperandB = Int16.Parse(operand.Substring(operand.Length - 1));
+                split = operand.Split(':');
+                operands.OperandB = Int16.Parse(split[1]);
             }
-            else if (operand.Contains("ADD"))
+            else if (operand == "ADD")
             {
                 result = operands.OperandA + operands.OperandB;
             }
-            else if (operand.Contains("SUB"))
+            else if (operand == "SUB")
             {
                 result = operands.OperandA - operands.OperandB;
             }
-            else if (operand.Contains("MULT"))
+            else if (operand == "MULT")
             {
                 result = operands.OperandA * operands.OperandB;
             }
